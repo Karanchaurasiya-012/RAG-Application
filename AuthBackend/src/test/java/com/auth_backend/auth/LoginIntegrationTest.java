@@ -80,6 +80,7 @@ class LoginIntegrationTest {
 				.andExpect(jsonPath("$.message").value(LoginService.SUCCESS_MESSAGE))
 				.andExpect(jsonPath("$.data.user.email").value("login-ok@example.com"))
 				.andExpect(jsonPath("$.data.user.roles[0]").value("USER"))
+				.andExpect(jsonPath("$.data.accessToken").isNotEmpty())
 				.andReturn();
 
 		assertThat(refreshTokenRepository.findByUserIdAndRevokedAtIsNull(user.getId())).hasSize(1);
@@ -144,7 +145,8 @@ class LoginIntegrationTest {
 				.andExpect(jsonPath("$.success").value(true))
 				.andExpect(jsonPath("$.message").value(LoginService.SUCCESS_MESSAGE))
 				.andExpect(jsonPath("$.data.user.email").value("pending@example.com"))
-				.andExpect(jsonPath("$.data.user.emailVerified").value(false));
+				.andExpect(jsonPath("$.data.user.emailVerified").value(false))
+				.andExpect(jsonPath("$.data.accessToken").isNotEmpty());
 	}
 
 	@Test

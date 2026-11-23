@@ -82,7 +82,7 @@ public class SecurityConfig {
 								"/oauth2/authorization/**",
 								"/login/oauth2/code/**"
 						).permitAll()
-						.requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
+						.requestMatchers(HttpMethod.GET, "/api/v1/auth/me", "/api/v1/auth/access-token").authenticated()
 						.anyRequest().authenticated()
 				)
 				.oauth2ResourceServer(oauth2 -> oauth2

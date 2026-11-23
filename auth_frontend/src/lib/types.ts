@@ -14,6 +14,11 @@ export type User = {
 
 export type AuthPayload = {
   user: User;
+  accessToken?: string;
+};
+
+export type AccessTokenPayload = {
+  accessToken: string;
 };
 
 export type CsrfPayload = {

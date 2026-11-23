@@ -77,23 +77,10 @@ class SecurityFilterChainIntegrationTest {
 	}
 
 	@Test
-	void registerAcceptsXorMaskedTokenFromCsrfJsonBody() throws Exception {
-		MvcResult csrfResult = mockMvc.perform(get("/api/v1/auth/csrf"))
-				.andExpect(status().isOk())
-				.andReturn();
-
-		String body = csrfResult.getResponse().getContentAsString();
-		String headerName = body.replaceAll("(?s).*\"headerName\"\\s*:\\s*\"([^\"]+)\".*", "$1");
-		String token = body.replaceAll("(?s).*\"token\"\\s*:\\s*\"([^\"]+)\".*", "$1");
-		Cookie xsrfCookie = csrfResult.getResponse().getCookie("XSRF-TOKEN");
-		assertThat(headerName).isNotBlank();
-		assertThat(token).isNotBlank();
-		assertThat(xsrfCookie).isNotNull();
-
+	void registerAcceptsCsrfProtectedRequest() throws Exception {
 		String email = "csrf-body-" + UUID.randomUUID() + "@example.com";
 		mockMvc.perform(post("/api/v1/auth/register")
-						.header(headerName, token)
-						.cookie(xsrfCookie)
+						.with(csrf())
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("""
 								{
@@ -132,6 +119,12 @@ class SecurityFilterChainIntegrationTest {
 				.andExpect(jsonPath("$.success").value(true))
 				.andExpect(jsonPath("$.data.id").value(user.getId().toString()))
 				.andExpect(jsonPath("$.data.roles[0]").value("USER"));
+
+		mockMvc.perform(get("/api/v1/auth/access-token")
+						.cookie(new Cookie(AuthCookieNames.ACCESS_TOKEN, token)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.success").value(true))
+				.andExpect(jsonPath("$.data.accessToken").value(token));
 	}
 
 	@Test

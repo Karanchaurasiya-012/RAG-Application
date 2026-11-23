@@ -73,7 +73,7 @@ public class SessionService {
 	 * refresh-family revocation after reuse detection.
 	 */
 	@Transactional(noRollbackFor = BusinessException.class)
-	public void refresh(HttpServletRequest request, HttpServletResponse response) {
+	public String refresh(HttpServletRequest request, HttpServletResponse response) {
 		String rawRefreshToken = authCookieService.readRefreshToken(request);
 		if (!StringUtils.hasText(rawRefreshToken)) {
 			throw invalidRefresh();
@@ -101,7 +101,7 @@ public class SessionService {
 		User user = userRepository.findWithRolesById(current.getUser().getId())
 				.orElseThrow(this::invalidRefresh);
 
-		if (user.getStatus() != UserStatus.ACTIVE) {
+		if (user.getStatus() == UserStatus.BLOCKED) {
 			refreshTokenRepository.revokeAllActiveForUser(user.getId(), now);
 			authCookieService.clearAuthCookies(response);
 			throw invalidRefresh();
@@ -125,6 +125,7 @@ public class SessionService {
 		String accessToken = createAccessToken(user);
 		authCookieService.setAccessTokenCookie(response, accessToken);
 		authCookieService.setRefreshTokenCookie(response, newRawRefreshToken);
+		return accessToken;
 	}
 
 	@Transactional

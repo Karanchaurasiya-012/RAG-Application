@@ -9,7 +9,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { fetchMe, logout as logoutRequest } from "@/lib/auth-api";
+import { fetchAccessToken, fetchMe, logout as logoutRequest } from "@/lib/auth-api";
+import { clearAccessToken } from "@/lib/access-token";
 import type { User } from "@/lib/types";
 
 type AuthStatus = "loading" | "authenticated" | "anonymous";
@@ -31,10 +32,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = useCallback(async () => {
     try {
       const me = await fetchMe();
+      // Auth cookie works on Auth host; bridge JWT for processing/output on other hosts.
+      await fetchAccessToken();
       setUserState(me);
       setStatus("authenticated");
       return me;
     } catch {
+      clearAccessToken();
       setUserState(null);
       setStatus("anonymous");
       return null;
@@ -54,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await logoutRequest();
     } finally {
+      clearAccessToken();
       setUser(null);
     }
   }, [setUser]);

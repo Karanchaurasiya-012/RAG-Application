@@ -71,7 +71,8 @@ public class LoginService {
 		user.setLastLoginAt(Instant.now());
 		userRepository.save(user);
 
-		return new AuthResponse(userMapper.toResponse(user));
+		// Body token lets the SPA call processing/output on other hosts (cookies are Auth-host only).
+		return new AuthResponse(userMapper.toResponse(user), session.accessToken());
 	}
 
 	private BusinessException invalidCredentials() {

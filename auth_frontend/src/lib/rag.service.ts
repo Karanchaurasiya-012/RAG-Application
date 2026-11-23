@@ -1,5 +1,6 @@
 import { RAG_API_BASE_URL } from "@/lib/config";
 import { ApiError } from "@/lib/api";
+import { authorizationHeaders } from "@/lib/access-token";
 import type { ApiResponse } from "@/lib/types";
 import type {
   ChatQueryResult,
@@ -27,6 +28,8 @@ async function ragRequest<T>(path: string, init: RequestInit = {}): Promise<ApiR
   if (init.body !== undefined && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
+  const auth = authorizationHeaders();
+  Object.entries(auth).forEach(([key, value]) => headers.set(key, value));
 
   const response = await fetch(`${RAG_API_BASE_URL}${path}`, {
     ...init,

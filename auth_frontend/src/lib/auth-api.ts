@@ -1,5 +1,6 @@
 import { apiRequest, clearCsrfCache } from "@/lib/api";
-import type { AuthPayload, User } from "@/lib/types";
+import { clearAccessToken, setAccessToken } from "@/lib/access-token";
+import type { AccessTokenPayload, AuthPayload, User } from "@/lib/types";
 
 export async function register(input: {
   fullName: string;
@@ -13,10 +14,22 @@ export async function register(input: {
 }
 
 export async function login(input: { email: string; password: string }) {
-  return apiRequest<AuthPayload>("/api/v1/auth/login", {
+  const response = await apiRequest<AuthPayload>("/api/v1/auth/login", {
     method: "POST",
     body: input,
   });
+  setAccessToken(response.data?.accessToken);
+  return response;
+}
+
+export async function fetchAccessToken(): Promise<string | null> {
+  const response = await apiRequest<AccessTokenPayload>("/api/v1/auth/access-token", {
+    method: "GET",
+    csrf: false,
+  });
+  const token = response.data?.accessToken ?? null;
+  setAccessToken(token);
+  return token;
 }
 
 export async function verifyEmail(token: string) {
@@ -55,6 +68,7 @@ export async function logout() {
     });
   } finally {
     clearCsrfCache();
+    clearAccessToken();
   }
 }
 

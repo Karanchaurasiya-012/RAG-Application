@@ -103,9 +103,21 @@ public class AuthController {
 	}
 
 	@PostMapping("/refresh")
-	public ResponseEntity<ApiResponse<Void>> refresh(HttpServletRequest request, HttpServletResponse response) {
-		sessionService.refresh(request, response);
-		return ResponseEntity.ok(ApiResponse.ok(SessionService.REFRESH_SUCCESS_MESSAGE));
+	public ResponseEntity<ApiResponse<AuthResponse>> refresh(HttpServletRequest request, HttpServletResponse response) {
+		String accessToken = sessionService.refresh(request, response);
+		return ResponseEntity.ok(ApiResponse.ok(
+				SessionService.REFRESH_SUCCESS_MESSAGE,
+				AuthResponse.accessTokenOnly(accessToken)
+		));
+	}
+
+	/**
+	 * Returns the current access JWT as JSON so the SPA can call other Render services
+	 * with {@code Authorization: Bearer} (Auth cookies are not shared across onrender hosts).
+	 */
+	@GetMapping("/access-token")
+	public ResponseEntity<ApiResponse<AuthResponse>> accessToken(@AuthenticationPrincipal Jwt jwt) {
+		return ResponseEntity.ok(ApiResponse.ok("Access token ready.", AuthResponse.accessTokenOnly(jwt.getTokenValue())));
 	}
 
 	@PostMapping("/logout")

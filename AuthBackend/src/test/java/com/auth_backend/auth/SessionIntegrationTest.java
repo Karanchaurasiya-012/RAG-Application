@@ -79,6 +79,7 @@ class SessionIntegrationTest {
 						.cookie(refreshCookie))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.message").value(SessionService.REFRESH_SUCCESS_MESSAGE))
+				.andExpect(jsonPath("$.data.accessToken").isNotEmpty())
 				.andReturn();
 
 		Cookie newRefresh = refreshResult.getResponse().getCookie(AuthCookieNames.REFRESH_TOKEN);

@@ -1,5 +1,6 @@
 import { PROCESSING_API_BASE_URL } from "@/lib/config";
 import { ApiError } from "@/lib/api";
+import { authorizationHeaders } from "@/lib/access-token";
 import type { ApiResponse } from "@/lib/types";
 import type {
   DocumentDetails,
@@ -29,6 +30,8 @@ async function processingRequest<T>(
 ): Promise<ApiResponse<T>> {
   const headers = new Headers(init.headers || {});
   headers.set("Accept", "application/json");
+  const auth = authorizationHeaders();
+  Object.entries(auth).forEach(([key, value]) => headers.set(key, value));
 
   const response = await fetch(`${PROCESSING_API_BASE_URL}${path}`, {
     ...init,

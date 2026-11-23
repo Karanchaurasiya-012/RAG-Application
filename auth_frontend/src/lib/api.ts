@@ -1,5 +1,6 @@
 import { API_BASE_URL } from "@/lib/config";
-import type { ApiResponse, CsrfPayload } from "@/lib/types";
+import { setAccessToken } from "@/lib/access-token";
+import type { ApiResponse, AuthPayload, CsrfPayload } from "@/lib/types";
 
 export class ApiError extends Error {
   status: number;
@@ -76,11 +77,12 @@ export function clearCsrfCache() {
 
 async function refreshSession(): Promise<boolean> {
   try {
-    await apiRequest<null>("/api/v1/auth/refresh", {
+    const response = await apiRequest<AuthPayload>("/api/v1/auth/refresh", {
       method: "POST",
       csrf: true,
       retryOnUnauthorized: false,
     });
+    setAccessToken(response.data?.accessToken);
     return true;
   } catch {
     return false;
