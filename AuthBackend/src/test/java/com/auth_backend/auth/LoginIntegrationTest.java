@@ -90,7 +90,7 @@ class LoginIntegrationTest {
 		assertThat(setCookie).contains(AuthCookieNames.REFRESH_TOKEN);
 		assertThat(setCookie).contains("HttpOnly");
 		assertThat(setCookie).contains("Secure");
-		assertThat(setCookie.toLowerCase()).contains("samesite=lax");
+		assertThat(setCookie.toLowerCase()).contains("samesite=none");
 		assertThat(result.getResponse().getContentAsString()).doesNotContain("password");
 		assertThat(result.getResponse().getContentAsString()).doesNotContain("token_hash");
 	}

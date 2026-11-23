@@ -13,6 +13,11 @@ import org.springframework.util.StringUtils;
 @Service
 public class AuthCookieService {
 
+	/**
+	 * Cross-site SPA (Vercel / localhost → Render Auth) needs None; Secure is required with None.
+	 */
+	private static final String CROSS_SITE_SAME_SITE = "None";
+
 	private final JwtService jwtService;
 
 	public AuthCookieService(JwtService jwtService) {
@@ -24,7 +29,7 @@ public class AuthCookieService {
 		ResponseCookie cookie = ResponseCookie.from(AuthCookieNames.ACCESS_TOKEN, accessToken)
 				.httpOnly(true)
 				.secure(true)
-				.sameSite("Lax")
+				.sameSite(CROSS_SITE_SAME_SITE)
 				.path("/")
 				.maxAge(ttl)
 				.build();
@@ -36,7 +41,7 @@ public class AuthCookieService {
 		ResponseCookie cookie = ResponseCookie.from(AuthCookieNames.REFRESH_TOKEN, refreshToken)
 				.httpOnly(true)
 				.secure(true)
-				.sameSite("Lax")
+				.sameSite(CROSS_SITE_SAME_SITE)
 				.path(AuthCookieNames.REFRESH_COOKIE_PATH)
 				.maxAge(ttl)
 				.build();
@@ -47,14 +52,14 @@ public class AuthCookieService {
 		ResponseCookie access = ResponseCookie.from(AuthCookieNames.ACCESS_TOKEN, "")
 				.httpOnly(true)
 				.secure(true)
-				.sameSite("Lax")
+				.sameSite(CROSS_SITE_SAME_SITE)
 				.path("/")
 				.maxAge(0)
 				.build();
 		ResponseCookie refresh = ResponseCookie.from(AuthCookieNames.REFRESH_TOKEN, "")
 				.httpOnly(true)
 				.secure(true)
-				.sameSite("Lax")
+				.sameSite(CROSS_SITE_SAME_SITE)
 				.path(AuthCookieNames.REFRESH_COOKIE_PATH)
 				.maxAge(0)
 				.build();
