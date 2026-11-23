@@ -1,0 +1,137 @@
+spring:
+  application:
+    name: output_backend
+  profiles:
+    default: local
+  config:
+    import: optional:file:.env[.properties]
+  # Google GenAI beans wait for Phase 4/8 config (project-id / API wiring).
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.model.google.genai.autoconfigure.embedding.GoogleGenAiEmbeddingConnectionAutoConfiguration
+      - org.springframework.ai.model.google.genai.autoconfigure.embedding.GoogleGenAiTextEmbeddingAutoConfiguration
+      - org.springframework.ai.model.google.genai.autoconfigure.chat.GoogleGenAiChatAutoConfiguration
+      - org.springframework.ai.model.google.genai.autoconfigure.image.GoogleGenAiImageConnectionAutoConfiguration
+      - org.springframework.ai.model.google.genai.autoconfigure.image.GoogleGenAiImageAutoConfiguration
+      - org.springframework.ai.model.google.genai.autoconfigure.transcription.GoogleGenAiTranscriptionConnectionAutoConfiguration
+      - org.springframework.ai.model.google.genai.autoconfigure.transcription.GoogleGenAiTranscriptionAutoConfiguration
+      - org.springframework.ai.model.google.genai.autoconfigure.tts.GoogleGenAiTextToSpeechConnectionAutoConfiguration
+      - org.springframework.ai.model.google.genai.autoconfigure.tts.GoogleGenAiTextToSpeechAutoConfiguration
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://127.0.0.1:5432/postgres}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    # Separate from processing_backend's flyway_schema_history on the same database.
+    table: rag_flyway_schema_history
+    # Non-empty shared schema (ingestion tables) needs baseline at 0 so V1 still runs.
+    baseline-on-migrate: true
+    baseline-version: 0
+  sql:
+    init:
+      mode: never
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+  # Provider beans wired explicitly in later phases.
+  ai:
+    model:
+      chat: none
+      embedding: none
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://127.0.0.1:11434}
+      init:
+        pull-model-strategy: never
+      chat:
+        options:
+          model: ${OLLAMA_CHAT_MODEL:qwen3.5:4b}
+      embedding:
+        options:
+          model: ${OLLAMA_EMBEDDING_MODEL:bge-m3:latest}
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY:}
+        chat:
+          options:
+            model: ${GEMINI_CHAT_MODEL:gemini-3.5-flash-lite}
+        embedding:
+          options:
+            model: ${GEMINI_EMBEDDING_MODEL:gemini-embedding-001}
+
+server:
+  port: ${SERVER_PORT:8090}
+  address: 0.0.0.0
+
+app:
+  jwt:
+    issuer: ${JWT_ISSUER:http://localhost:8080}
+    audience: ${JWT_AUDIENCE:auth-api}
+    public-key-path: ${JWT_PUBLIC_KEY_PATH:./keys/public.pem}
+  embedding:
+    default-provider: ${EMBEDDING_PROVIDER:ollama}
+    dimensions: ${EMBEDDING_DIMENSIONS:1024}
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://127.0.0.1:11434}
+      model: ${OLLAMA_EMBEDDING_MODEL:bge-m3:latest}
+    gemini:
+      api-key: ${GEMINI_API_KEY:}
+      model: ${GEMINI_EMBEDDING_MODEL:gemini-embedding-001}
+  llm:
+    default-provider: ${LLM_PROVIDER:ollama}
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://127.0.0.1:11434}
+      model: ${OLLAMA_CHAT_MODEL:qwen3.5:4b}
+      read-timeout-seconds: ${OLLAMA_CHAT_TIMEOUT_SECONDS:600}
+    gemini:
+      api-key: ${GEMINI_API_KEY:}
+      model: ${GEMINI_CHAT_MODEL:gemini-3.5-flash-lite}
+  rag:
+    top-k: ${RAG_TOP_K:5}
+    similarity-threshold: ${RAG_SIMILARITY_THRESHOLD:0.70}
+    context-token-budget: ${RAG_CONTEXT_TOKEN_BUDGET:1800}
+  retention:
+    conversation-days: ${CONVERSATION_RETENTION_DAYS:90}
+    history-max-messages: ${CONVERSATION_HISTORY_MAX_MESSAGES:6}
+  redis-cache:
+    query-embedding-ttl-seconds: ${REDIS_QUERY_EMBEDDING_TTL:7200}
+    retrieval-ttl-seconds: ${REDIS_RETRIEVAL_TTL:900}
+    answer-ttl-seconds: ${REDIS_ANSWER_TTL:3600}
+    answer-cache-enabled: ${REDIS_ANSWER_CACHE_ENABLED:false}
+  cors:
+    allowed-origins:
+      - ${CORS_ORIGIN:http://localhost:3000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+
+logging:
+  level:
+    root: INFO
+    com.output_backend: INFO

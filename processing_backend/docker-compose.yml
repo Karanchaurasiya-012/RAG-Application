@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg14
+    container_name: processing-postgres
+    environment:
+      POSTGRES_DB: document_db
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    # Host often already uses 5432–5436; map compose DB to 5437.
+    ports:
+      - "5437:5432"
+    volumes:
+      - processing_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    build: .
+    container_name: processing-backend-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    env_file:
+      - .env
+    environment:
+      # Inside compose network, DB hostname is the service name "postgres".
+      DB_URL: jdbc:postgresql://postgres:5432/document_db
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      SERVER_PORT: 8081
+      LOCAL_TEMP_DIR: /app/tmp/uploads
+      # Ollama on the host (Linux: host-gateway). Override in .env if needed.
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./keys:/app/keys:ro
+      - processing_uploads:/app/tmp/uploads
+
+volumes:
+  processing_pgdata:
+  processing_uploads:

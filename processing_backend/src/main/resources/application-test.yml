@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://127.0.0.1:5434/postgres}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: none
+  flyway:
+    enabled: true
+  ai:
+    model:
+      embedding: none
+      chat: none
+
+app:
+  jwt:
+    issuer: http://localhost:8080
+    audience: auth-api
+    public-key-path: ./keys/public.pem
+  aws:
+    region: ap-south-1
+    s3-bucket: file-upload-s3-demo-2026
+  embedding:
+    default-provider: ollama
+    dimensions: 1024

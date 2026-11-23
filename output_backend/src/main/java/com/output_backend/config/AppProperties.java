@@ -1,0 +1,328 @@
+package com.output_backend.config;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+@ConfigurationProperties(prefix = "app")
+public class AppProperties {
+
+	private final Jwt jwt = new Jwt();
+	private final Embedding embedding = new Embedding();
+	private final Llm llm = new Llm();
+	private final Rag rag = new Rag();
+	private final Retention retention = new Retention();
+	private final RedisCache redisCache = new RedisCache();
+	private final Cors cors = new Cors();
+
+	public Jwt getJwt() {
+		return jwt;
+	}
+
+	public Embedding getEmbedding() {
+		return embedding;
+	}
+
+	public Llm getLlm() {
+		return llm;
+	}
+
+	public Rag getRag() {
+		return rag;
+	}
+
+	public Retention getRetention() {
+		return retention;
+	}
+
+	public RedisCache getRedisCache() {
+		return redisCache;
+	}
+
+	public Cors getCors() {
+		return cors;
+	}
+
+	public static class Jwt {
+		private String issuer = "http://localhost:8080";
+		private String audience = "auth-api";
+		private String publicKeyPath = "./keys/public.pem";
+
+		public String getIssuer() {
+			return issuer;
+		}
+
+		public void setIssuer(String issuer) {
+			this.issuer = issuer;
+		}
+
+		public String getAudience() {
+			return audience;
+		}
+
+		public void setAudience(String audience) {
+			this.audience = audience;
+		}
+
+		public String getPublicKeyPath() {
+			return publicKeyPath;
+		}
+
+		public void setPublicKeyPath(String publicKeyPath) {
+			this.publicKeyPath = publicKeyPath;
+		}
+	}
+
+	public static class Embedding {
+		private String defaultProvider = "ollama";
+		private int dimensions = 1024;
+		private final Ollama ollama = new Ollama();
+		private final Gemini gemini = new Gemini();
+
+		public String getDefaultProvider() {
+			return defaultProvider;
+		}
+
+		public void setDefaultProvider(String defaultProvider) {
+			this.defaultProvider = defaultProvider;
+		}
+
+		public int getDimensions() {
+			return dimensions;
+		}
+
+		public void setDimensions(int dimensions) {
+			this.dimensions = dimensions;
+		}
+
+		public Ollama getOllama() {
+			return ollama;
+		}
+
+		public Gemini getGemini() {
+			return gemini;
+		}
+
+		public static class Ollama {
+			private String baseUrl = "http://127.0.0.1:11434";
+			private String model = "bge-m3:latest";
+
+			public String getBaseUrl() {
+				return baseUrl;
+			}
+
+			public void setBaseUrl(String baseUrl) {
+				this.baseUrl = baseUrl;
+			}
+
+			public String getModel() {
+				return model;
+			}
+
+			public void setModel(String model) {
+				this.model = model;
+			}
+		}
+
+		public static class Gemini {
+			private String model = "gemini-embedding-001";
+			private String apiKey = "";
+
+			public String getModel() {
+				return model;
+			}
+
+			public void setModel(String model) {
+				this.model = model;
+			}
+
+			public String getApiKey() {
+				return apiKey;
+			}
+
+			public void setApiKey(String apiKey) {
+				this.apiKey = apiKey;
+			}
+		}
+	}
+
+	public static class Llm {
+		private String defaultProvider = "ollama";
+		private final Ollama ollama = new Ollama();
+		private final Gemini gemini = new Gemini();
+
+		public String getDefaultProvider() {
+			return defaultProvider;
+		}
+
+		public void setDefaultProvider(String defaultProvider) {
+			this.defaultProvider = defaultProvider;
+		}
+
+		public Ollama getOllama() {
+			return ollama;
+		}
+
+		public Gemini getGemini() {
+			return gemini;
+		}
+
+		public static class Ollama {
+			private String baseUrl = "http://127.0.0.1:11434";
+			private String model = "qwen3.5:4b";
+			/** HTTP read timeout for /api/chat (local CPU models can be slow). */
+			private int readTimeoutSeconds = 600;
+
+			public String getBaseUrl() {
+				return baseUrl;
+			}
+
+			public void setBaseUrl(String baseUrl) {
+				this.baseUrl = baseUrl;
+			}
+
+			public String getModel() {
+				return model;
+			}
+
+			public void setModel(String model) {
+				this.model = model;
+			}
+
+			public int getReadTimeoutSeconds() {
+				return readTimeoutSeconds;
+			}
+
+			public void setReadTimeoutSeconds(int readTimeoutSeconds) {
+				this.readTimeoutSeconds = readTimeoutSeconds;
+			}
+		}
+
+		public static class Gemini {
+			private String model = "gemini-3.5-flash-lite";
+			private String apiKey = "";
+
+			public String getModel() {
+				return model;
+			}
+
+			public void setModel(String model) {
+				this.model = model;
+			}
+
+			public String getApiKey() {
+				return apiKey;
+			}
+
+			public void setApiKey(String apiKey) {
+				this.apiKey = apiKey;
+			}
+		}
+	}
+
+	public static class Rag {
+		private int topK = 5;
+		private double similarityThreshold = 0.70;
+		/** Approximate max tokens for retrieved document context passed to the LLM. */
+		private int contextTokenBudget = 1800;
+
+		public int getTopK() {
+			return topK;
+		}
+
+		public void setTopK(int topK) {
+			this.topK = topK;
+		}
+
+		public double getSimilarityThreshold() {
+			return similarityThreshold;
+		}
+
+		public void setSimilarityThreshold(double similarityThreshold) {
+			this.similarityThreshold = similarityThreshold;
+		}
+
+		public int getContextTokenBudget() {
+			return contextTokenBudget;
+		}
+
+		public void setContextTokenBudget(int contextTokenBudget) {
+			this.contextTokenBudget = contextTokenBudget;
+		}
+	}
+
+	public static class Retention {
+		/** Default conversation message retention (days). Enforced by cleanup jobs later. */
+		private int conversationDays = 90;
+		/** Max recent messages loaded into the LLM prompt for follow-ups. */
+		private int historyMaxMessages = 6;
+
+		public int getConversationDays() {
+			return conversationDays;
+		}
+
+		public void setConversationDays(int conversationDays) {
+			this.conversationDays = conversationDays;
+		}
+
+		public int getHistoryMaxMessages() {
+			return historyMaxMessages;
+		}
+
+		public void setHistoryMaxMessages(int historyMaxMessages) {
+			this.historyMaxMessages = historyMaxMessages;
+		}
+	}
+
+	public static class RedisCache {
+		private long queryEmbeddingTtlSeconds = 7200;
+		private long retrievalTtlSeconds = 900;
+		private long answerTtlSeconds = 3600;
+		private boolean answerCacheEnabled = false;
+
+		public long getQueryEmbeddingTtlSeconds() {
+			return queryEmbeddingTtlSeconds;
+		}
+
+		public void setQueryEmbeddingTtlSeconds(long queryEmbeddingTtlSeconds) {
+			this.queryEmbeddingTtlSeconds = queryEmbeddingTtlSeconds;
+		}
+
+		public long getRetrievalTtlSeconds() {
+			return retrievalTtlSeconds;
+		}
+
+		public void setRetrievalTtlSeconds(long retrievalTtlSeconds) {
+			this.retrievalTtlSeconds = retrievalTtlSeconds;
+		}
+
+		public long getAnswerTtlSeconds() {
+			return answerTtlSeconds;
+		}
+
+		public void setAnswerTtlSeconds(long answerTtlSeconds) {
+			this.answerTtlSeconds = answerTtlSeconds;
+		}
+
+		public boolean isAnswerCacheEnabled() {
+			return answerCacheEnabled;
+		}
+
+		public void setAnswerCacheEnabled(boolean answerCacheEnabled) {
+			this.answerCacheEnabled = answerCacheEnabled;
+		}
+	}
+
+	public static class Cors {
+		private List<String> allowedOrigins = new ArrayList<>(List.of("http://localhost:3000"));
+
+		public List<String> getAllowedOrigins() {
+			return allowedOrigins;
+		}
+
+		public void setAllowedOrigins(List<String> allowedOrigins) {
+			this.allowedOrigins = allowedOrigins;
+		}
+	}
+}

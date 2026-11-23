@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/auth_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD}
+  jpa:
+    show-sql: false
+  mail:
+    host: localhost
+    port: 25
+    username: test
+    password: test
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: test-google-client-id
+            client-secret: test-google-client-secret
+
+app:
+  frontend-url: http://localhost:3000
+  email:
+    provider: smtp
+    from: noreply@example.com
+    verification-token-ttl: 24h
+  jwt:
+    private-key-path: ./keys/private.pem
+    public-key-path: ./keys/public.pem
+

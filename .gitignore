@@ -1,0 +1,25 @@
+# secrets
+.env
+.env.local
+.env.*.local
+**/.env
+!**/.env.example
+!**/.env.docker.example
+**/keys/private.pem
+**/private.pem
+**/*.p12
+**/*.jks
+
+# build / deps
+**/target/
+**/node_modules/
+**/.next/
+**/tmp/
+**/*.log
+**/tsconfig.tsbuildinfo
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
