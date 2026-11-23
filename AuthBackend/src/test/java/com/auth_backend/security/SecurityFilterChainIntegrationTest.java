@@ -77,6 +77,36 @@ class SecurityFilterChainIntegrationTest {
 	}
 
 	@Test
+	void registerAcceptsXorMaskedTokenFromCsrfJsonBody() throws Exception {
+		MvcResult csrfResult = mockMvc.perform(get("/api/v1/auth/csrf"))
+				.andExpect(status().isOk())
+				.andReturn();
+
+		String body = csrfResult.getResponse().getContentAsString();
+		String headerName = body.replaceAll("(?s).*\"headerName\"\\s*:\\s*\"([^\"]+)\".*", "$1");
+		String token = body.replaceAll("(?s).*\"token\"\\s*:\\s*\"([^\"]+)\".*", "$1");
+		Cookie xsrfCookie = csrfResult.getResponse().getCookie("XSRF-TOKEN");
+		assertThat(headerName).isNotBlank();
+		assertThat(token).isNotBlank();
+		assertThat(xsrfCookie).isNotNull();
+
+		String email = "csrf-body-" + UUID.randomUUID() + "@example.com";
+		mockMvc.perform(post("/api/v1/auth/register")
+						.header(headerName, token)
+						.cookie(xsrfCookie)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{
+								  "fullName": "CSRF Body User",
+								  "email": "%s",
+								  "password": "StrongPassword123!"
+								}
+								""".formatted(email)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.success").value(true));
+	}
+
+	@Test
 	void meWithoutAccessTokenIsUnauthorized() throws Exception {
 		mockMvc.perform(get("/api/v1/auth/me"))
 				.andExpect(status().isUnauthorized())

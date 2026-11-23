@@ -3,13 +3,11 @@ package com.auth_backend.config;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Supplier;
 
 import com.auth_backend.security.CookieBearerTokenResolver;
 import com.auth_backend.security.CustomOAuth2FailureHandler;
 import com.auth_backend.security.CustomOAuth2SuccessHandler;
 import com.auth_backend.security.JwtAuthenticationConverter;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,13 +22,9 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfToken;
-import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
-import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
 import org.springframework.security.web.csrf.InvalidCsrfTokenException;
 import org.springframework.security.web.csrf.MissingCsrfTokenException;
 import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
-import org.springframework.util.StringUtils;
 import tools.jackson.databind.ObjectMapper;
 
 @Configuration
@@ -63,9 +57,13 @@ public class SecurityConfig {
 				.cors(Customizer.withDefaults())
 				.csrf(csrf -> {
 					CookieCsrfTokenRepository repository = CookieCsrfTokenRepository.withHttpOnlyFalse();
-					// Match auth cookies: cross-site SPA (localhost / Vercel → Render) must send XSRF-TOKEN.
+					// Cross-site SPA cannot read Auth-host cookies via document.cookie; the frontend
+					// sends the XOR-masked token from GET /csrf JSON, so resolve headers with XOR
+					// (not spa()'s plain-header path that expects the raw cookie value).
 					repository.setCookieCustomizer(cookie -> cookie.secure(true).sameSite("None"));
-					csrf.csrfTokenRepository(repository).csrfTokenRequestHandler(spaCsrfTokenRequestHandler());
+					XorCsrfTokenRequestAttributeHandler requestHandler = new XorCsrfTokenRequestAttributeHandler();
+					requestHandler.setCsrfRequestAttributeName(null);
+					csrf.csrfTokenRepository(repository).csrfTokenRequestHandler(requestHandler);
 				})
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 				.authorizeHttpRequests(auth -> auth
@@ -147,29 +145,4 @@ public class SecurityConfig {
 		objectMapper.writeValue(response.getOutputStream(), body);
 	}
 
-	/**
-	 * Same behavior as {@code CsrfConfigurer#spa()}'s request handler, kept explicit so we can
-	 * customize the CSRF cookie SameSite for cross-origin frontends.
-	 */
-	private static CsrfTokenRequestHandler spaCsrfTokenRequestHandler() {
-		XorCsrfTokenRequestAttributeHandler xor = new XorCsrfTokenRequestAttributeHandler();
-		xor.setCsrfRequestAttributeName(null);
-		CsrfTokenRequestAttributeHandler plain = new CsrfTokenRequestAttributeHandler();
-		return new CsrfTokenRequestHandler() {
-			@Override
-			public void handle(
-					HttpServletRequest request,
-					HttpServletResponse response,
-					Supplier<CsrfToken> csrfToken
-			) {
-				xor.handle(request, response, csrfToken);
-			}
-
-			@Override
-			public String resolveCsrfTokenValue(HttpServletRequest request, CsrfToken csrfToken) {
-				String headerValue = request.getHeader(csrfToken.getHeaderName());
-				return (StringUtils.hasText(headerValue) ? plain : xor).resolveCsrfTokenValue(request, csrfToken);
-			}
-		};
-	}
 }

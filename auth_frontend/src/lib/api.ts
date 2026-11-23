@@ -25,7 +25,8 @@ type ResolvedCsrf = {
   token: string;
 };
 
-let csrfMeta: Pick<CsrfPayload, "headerName" | "parameterName"> | null = null;
+/** In-memory CSRF from GET /csrf JSON (works cross-origin; document.cookie cannot). */
+let csrfCache: ResolvedCsrf | null = null;
 
 async function parseJson<T>(response: Response): Promise<ApiResponse<T> | null> {
   const text = await response.text();
@@ -39,27 +40,13 @@ async function parseJson<T>(response: Response): Promise<ApiResponse<T> | null> 
   }
 }
 
-function readBrowserCookie(name: string): string | null {
-  if (typeof document === "undefined") {
-    return null;
-  }
-  const encoded = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith(`${name}=`));
-  if (!encoded) {
-    return null;
-  }
-  return decodeURIComponent(encoded.slice(name.length + 1));
-}
-
 /**
- * Spring Security csrf.spa() expects X-XSRF-TOKEN to match the XSRF-TOKEN cookie
- * (not the XOR-masked value exposed by CsrfToken#getToken()).
+ * Cross-origin SPA (localhost / Vercel → Render Auth): read token from JSON body.
+ * Auth uses XOR CSRF handler so this value matches when sent as X-XSRF-TOKEN with credentials.
  */
 export async function fetchCsrf(force = false): Promise<ResolvedCsrf> {
-  const existingCookie = readBrowserCookie("XSRF-TOKEN");
-  if (!force && existingCookie && csrfMeta?.headerName) {
-    return { headerName: csrfMeta.headerName, token: existingCookie };
+  if (!force && csrfCache) {
+    return csrfCache;
   }
 
   const response = await fetch(`${API_BASE_URL}/api/v1/auth/csrf`, {
@@ -68,7 +55,7 @@ export async function fetchCsrf(force = false): Promise<ResolvedCsrf> {
     headers: { Accept: "application/json" },
   });
   const payload = await parseJson<CsrfPayload>(response);
-  if (!response.ok || !payload?.success || !payload.data?.headerName) {
+  if (!response.ok || !payload?.success || !payload.data?.headerName || !payload.data.token) {
     throw new ApiError(
       response.status,
       payload?.message || "Unable to obtain CSRF token.",
@@ -76,25 +63,15 @@ export async function fetchCsrf(force = false): Promise<ResolvedCsrf> {
     );
   }
 
-  csrfMeta = {
+  csrfCache = {
     headerName: payload.data.headerName,
-    parameterName: payload.data.parameterName,
+    token: payload.data.token,
   };
-
-  const cookieToken = readBrowserCookie("XSRF-TOKEN");
-  if (!cookieToken) {
-    throw new ApiError(
-      500,
-      "CSRF cookie was not set. Ensure API and app share the localhost host.",
-      payload
-    );
-  }
-
-  return { headerName: csrfMeta.headerName, token: cookieToken };
+  return csrfCache;
 }
 
 export function clearCsrfCache() {
-  csrfMeta = null;
+  csrfCache = null;
 }
 
 async function refreshSession(): Promise<boolean> {
