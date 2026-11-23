@@ -150,11 +150,8 @@ public class RegistrationService {
 			emailService.sendVerificationEmail(email, verificationLink);
 		}
 		catch (EmailDeliveryException ex) {
-			log.error("Verification email delivery failed for registered user");
-			throw new BusinessException(
-					"Verification email could not be sent. Please try again later.",
-					HttpStatus.SERVICE_UNAVAILABLE
-			);
+			// Soft-fail: registration/resend still succeed when SMTP (e.g. Gmail from Render) is unavailable.
+			log.error("Verification email delivery failed for to={}; continuing without blocking the user", email);
 		}
 	}
 }

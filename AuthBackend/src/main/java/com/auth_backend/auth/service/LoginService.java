@@ -58,10 +58,7 @@ public class LoginService {
 			throw new BusinessException("Account is blocked.", HttpStatus.FORBIDDEN);
 		}
 
-		if (user.getStatus() != UserStatus.ACTIVE || user.getEmailVerifiedAt() == null) {
-			throw new BusinessException("Email verification required.", HttpStatus.FORBIDDEN);
-		}
-
+		// PENDING / unverified local users may sign in; email verification is best-effort only.
 		SessionService.IssuedSession session = sessionService.issueSession(
 				user,
 				httpRequest.getHeader("User-Agent"),

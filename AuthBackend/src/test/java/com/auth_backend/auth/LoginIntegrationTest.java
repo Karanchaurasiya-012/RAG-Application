@@ -128,7 +128,7 @@ class LoginIntegrationTest {
 	}
 
 	@Test
-	void pendingUnverifiedUserCannotLogin() throws Exception {
+	void pendingUnverifiedUserCanLogin() throws Exception {
 		persistUser("pending@example.com", "StrongPassword123!", UserStatus.PENDING, null);
 
 		mockMvc.perform(post("/api/v1/auth/login")
@@ -140,8 +140,11 @@ class LoginIntegrationTest {
 								  "password":"StrongPassword123!"
 								}
 								"""))
-				.andExpect(status().isForbidden())
-				.andExpect(jsonPath("$.message").value("Email verification required."));
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.success").value(true))
+				.andExpect(jsonPath("$.message").value(LoginService.SUCCESS_MESSAGE))
+				.andExpect(jsonPath("$.data.user.email").value("pending@example.com"))
+				.andExpect(jsonPath("$.data.user.emailVerified").value(false));
 	}
 
 	@Test

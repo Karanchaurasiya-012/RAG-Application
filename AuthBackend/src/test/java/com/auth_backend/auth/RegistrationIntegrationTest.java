@@ -205,7 +205,7 @@ class RegistrationIntegrationTest {
 	}
 
 	@Test
-	void smtpFailureReturnsServiceUnavailableAndDoesNotPretendEmailWasSent() throws Exception {
+	void smtpFailureStillRegistersSuccessfullyWithoutSendingEmail() throws Exception {
 		recordingEmailService.failNextSend();
 
 		mockMvc.perform(post("/api/v1/auth/register")
@@ -218,9 +218,9 @@ class RegistrationIntegrationTest {
 								  "password": "StrongPassword123!"
 								}
 								"""))
-				.andExpect(status().isServiceUnavailable())
-				.andExpect(jsonPath("$.success").value(false))
-				.andExpect(jsonPath("$.message").value("Verification email could not be sent. Please try again later."));
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.success").value(true))
+				.andExpect(jsonPath("$.message").value(RegistrationService.GENERIC_REGISTER_MESSAGE));
 
 		assertThat(userRepository.existsByEmail("smtp-fail@example.com")).isTrue();
 		assertThat(recordingEmailService.getSentMessages()).isEmpty();
