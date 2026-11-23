@@ -97,6 +97,10 @@ export async function uploadDocument(
     );
     xhr.withCredentials = true;
     xhr.responseType = "text";
+    const auth = authorizationHeaders() as Record<string, string>;
+    Object.entries(auth).forEach(([key, value]) => {
+      xhr.setRequestHeader(key, value);
+    });
 
     xhr.upload.onprogress = (event) => {
       if (!onProgress || !event.lengthComputable || event.total <= 0) {
